@@ -36,25 +36,20 @@ struct rehlds_api : players_api
 
 struct hlds_api : players_api
 {
-	bool Init() override
-	{
-	#ifdef _WIN32
-	    HMODULE handle = LoadLibraryA("xash.dll");
-	    svs = (server_static_t*)GetProcAddress(handle, "svs");
-	    sv  = (server_t*)GetProcAddress(handle, "sv");
-	#else
-	    void* handle = dlopen("libxash.so", RTLD_NOW);
-	    svs = (server_static_t*)dlsym(handle, "svs");
-	    sv  = (server_t*)dlsym(handle, "sv");
-	#endif
-	
-	    if (!svs || !sv) {
-			UTIL_ServerPrint("Failed to get svs or sv symbols");
-	        return false;
-	    }
-	
-	    return true;
-	}
+    bool Init() override
+    {
+#ifdef __linux__
+        void* handle = dlopen("libxash.so", RTLD_NOW | RTLD_GLOBAL);
+        if (!handle)
+            return false;
+
+        svs = (server_static_t*)dlsym(handle, "svs");
+        sv  = (server_t*)dlsym(handle, "sv");
+
+        return svs != nullptr && sv != nullptr;
+#endif
+        return false;
+    }
 
     client_t* GetClient(size_t index) override
     {
