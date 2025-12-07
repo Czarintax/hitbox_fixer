@@ -37,39 +37,37 @@ struct rehlds_api : players_api
 
 struct hlds_api : players_api
 {
-	bool Init() override
-	{
-#ifdef _WIN32
-		if (GetModuleHandleA("hw.dll"))
-		{
-			svs = decltype(svs)(PatternScan::FindPattern("A1 *? ? ? ? 83 C4 ? 85 C0 74 ? 68 ? ? ? ? E8 ? ? ? ? 83 C4 ? C3 8B 0D ? ? ? ?", "hw.dll"));
-			sv = decltype(sv)(PatternScan::FindPattern("A1 *? ? ? ? 85 C0 74 ? DD ? ? ? ? ? A1 ? ? ? ?", "hw.dll"));
-		}
-		else
-		{
-			svs = decltype(svs)(PatternScan::FindPattern("A1 *? ? ? ? 83 C4 ? 85 C0 74 ? 68 ? ? ? ? E8 ? ? ? ? 83 C4 ? C3 8B 0D ? ? ? ?", "swds.dll"));
-			sv = decltype(sv)(PatternScan::FindPattern("A1 *? ? ? ? 85 C0 74 ? DD ? ? ? ? ? A1 ? ? ? ?", "hw.dll"));
-		}
+    bool Init() override
+    {
+#ifdef __linux__
+        void* handle = dlopen("libxash.so", RTLD_NOW | RTLD_GLOBAL);
+        if (!handle)
+            return false;
 
-#elif __linux__
-		svs = decltype(svs)(PatternScan::FindPattern("83 3D *? ? ? ? ? 0F 9F C0 89 04 24 E8 ? ? ? ? A1 ? ? ? ?", "engine_i486.so"));
-		sv = decltype(sv)(PatternScan::FindPattern("A1 *? ? ? ? 85 C0 75 ? 83 C4 ? 5B 5E", "engine_i486.so"));
+        svs = (server_static_t*)dlsym(handle, "svs");
+        sv  = (server_t*)dlsym(handle, "sv");
+
+        return svs != nullptr && sv != nullptr;
 #endif
-		return svs != nullptr && sv != nullptr;
-	};
-	client_t* GetClient(size_t index) override
-	{
-		return &svs->clients[index];
-	};
-	size_t GetMaxClients() override
-	{
-		return svs->maxclients;
-	};
-	model_t* GetModel(size_t model_index)
-	{
-		return sv->models[model_index];
-	}
-	server_static_t *svs;
-	server_t* sv;
+        return false;
+    }
+
+    client_t* GetClient(size_t index) override
+    {
+        return &svs->clients[index];
+    }
+
+    size_t GetMaxClients() override
+    {
+        return svs->maxclients;
+    }
+
+    model_t* GetModel(size_t model_index)
+    {
+        return sv->models[model_index];
+    }
+
+    server_static_t* svs;
+    server_t* sv;
 };
 extern std::unique_ptr<players_api> api;
