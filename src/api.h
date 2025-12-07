@@ -49,7 +49,7 @@ struct hlds_api : players_api
 	#endif
 	
 	    if (!svs || !sv) {
-	        AEF_PRINT("Failed to get svs or sv symbols", LOG_PREFIX);
+			UTIL_ServerPrint("Failed to get svs or sv symbols");
 	        return false;
 	    }
 	
